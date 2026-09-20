@@ -97,7 +97,8 @@ latest_results: Optional[dict] = None
 
 # === API Endpoints ===
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def root():
     """Health check endpoint."""
     return {
