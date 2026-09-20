@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState<string>("checking");
@@ -9,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     const checkAPI = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/`);
+        const response = await fetch(`${API_BASE_URL}/`);
         if (response.ok) {
           setApiStatus("connected");
         } else {
