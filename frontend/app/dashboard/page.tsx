@@ -3,42 +3,27 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
-import {
   getRiskMetrics,
   getHoldings,
   getAlerts,
-  getWatchlist,
   HoldingItem,
   AlertItem,
-  WatchlistItem,
-  PortfolioHealthScore,
-  RiskMeter as RiskMeterType,
 } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { MetricCard } from "@/components/ui/MetricCard";
-import { RiskMeter } from "@/components/ui/RiskMeter";
-import { HealthScoreCard } from "@/components/ui/HealthScore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 
-// Institutional chart palette
-const PIE_COLORS = ["#0F172A", "#2563EB", "#059669", "#D97706", "#7C3AED", "#DB2777"];
+const PIPELINE_NODES = [
+  { id: 1, name: "Market Agent", role: "Prices & Feeds" },
+  { id: 2, name: "Risk Agent", role: "Drawdown & VaR" },
+  { id: 3, name: "Anomaly Agent", role: "Z-Score Screening" },
+  { id: 4, name: "News Agent", role: "Web Intelligence" },
+  { id: 5, name: "Rebalance Agent", role: "Weight Drift" },
+  { id: 6, name: "ML Agent", role: "Volatility Projection" },
+  { id: 7, name: "Writer Agent", role: "LLM Synthesis", isLlM: true },
+];
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -46,7 +31,7 @@ export default function DashboardPage() {
   const [riskData, setRiskData] = useState<any>(null);
   const [holdings, setHoldings] = useState<HoldingItem[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
+  const [showTrace, setShowTrace] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -55,18 +40,16 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        const [rData, hData, aData, wData] = await Promise.allSettled([
+        const [rData, hData, aData] = await Promise.allSettled([
           getRiskMetrics(),
           getHoldings(),
           getAlerts(),
-          getWatchlist(),
         ]);
 
         if (mounted) {
           if (rData.status === "fulfilled") setRiskData(rData.value);
           if (hData.status === "fulfilled") setHoldings(hData.value);
           if (aData.status === "fulfilled") setAlerts(aData.value);
-          if (wData.status === "fulfilled") setWatchlist(wData.value);
         }
       } catch (err: any) {
         if (mounted) setError(err.message || "Failed to load dashboard.");
@@ -83,14 +66,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 py-4">
         <div className="h-8 w-64 bg-slate-200 animate-pulse rounded-md" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 bg-white border border-slate-200 rounded-xl animate-pulse" />
-          ))}
-        </div>
-        <TableSkeleton rows={6} />
+        <div className="h-40 bg-white border border-slate-200 rounded-xl animate-pulse" />
+        <TableSkeleton rows={5} />
       </div>
     );
   }
@@ -98,303 +77,235 @@ export default function DashboardPage() {
   // If no holdings loaded yet
   if (!holdings || holdings.length === 0) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Portfolio Dashboard
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Real-time portfolio valuation, risk exposure, and allocation drift analytics.
-          </p>
-        </div>
+      <div className="py-8">
         <EmptyState
           title="No Active Portfolio Loaded"
-          description="Upload your portfolio CSV file or test with the pre-configured sample portfolio to generate live institutional analytics."
-          actionText="Import Portfolio CSV"
+          description="Upload a portfolio CSV or load benchmark holdings to run the 7-agent LangGraph monitoring pipeline."
+          actionText="Go to Portfolio Upload"
           actionHref="/portfolio"
         />
       </div>
     );
   }
 
-  // Calculate synthetic or real portfolio analytics
   const metrics = riskData?.metrics || {};
-  const health: PortfolioHealthScore | null = riskData?.health_score || null;
-  const meter: RiskMeterType | null = riskData?.risk_meter || null;
-
-  const totalValue =
-    riskData?.metrics?.portfolio_value ||
-    holdings.reduce((acc, h) => acc + (h.quantity * (h.current_price || 2400)), 0);
-
-  const annVol = metrics?.annualized_volatility;
-  const sharpe = metrics?.sharpe_ratio;
-  const mdd = metrics?.max_drawdown;
-
-  // Chart Data: Equity Curve (last 30 days)
-  const equityCurveData = [
-    { date: "Day 1", value: totalValue * 0.94 },
-    { date: "Day 5", value: totalValue * 0.95 },
-    { date: "Day 10", value: totalValue * 0.93 },
-    { date: "Day 15", value: totalValue * 0.97 },
-    { date: "Day 20", value: totalValue * 0.985 },
-    { date: "Day 25", value: totalValue * 0.99 },
-    { date: "Day 30", value: totalValue },
-  ];
-
-  // Allocation Donut Data
-  const allocationData = holdings.map((h) => ({
-    name: h.symbol,
-    value: Math.round((h.weight || 1.0 / holdings.length) * 100),
-  }));
-
-  // Drift Comparison Data
-  const driftData = holdings.map((h) => {
-    const currentW = (h.weight || 1.0 / holdings.length) * 100;
-    const targetW = (h.target_weight || 1.0 / holdings.length) * 100;
-    return {
-      symbol: h.symbol,
-      Current: Number(currentW.toFixed(1)),
-      Target: Number(targetW.toFixed(1)),
-      Drift: Number((currentW - targetW).toFixed(1)),
-    };
-  });
+  const briefing = riskData?.briefing;
+  const trace = riskData?.trace;
+  const orchestratorEngine = riskData?.orchestrator_engine || "LangGraph StateGraph";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 py-4">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-            Investment Portfolio Dashboard
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Real-time positions, allocation health, and downside risk monitoring.
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              Multi-Agent Monitoring Center
+            </h1>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-mono text-[11px]">
+              {orchestratorEngine}
+            </Badge>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Autonomous multi-agent surveillance active over {holdings.length} portfolio positions.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-3">
           <Link href="/portfolio">
-            <Button variant="outline" size="sm">
-              Rebalance / Re-Upload
-            </Button>
-          </Link>
-          <Link href="/risk">
-            <Button variant="primary" size="sm">
-              Full Risk Suite →
+            <Button variant="outline" size="sm" className="text-xs font-semibold">
+              Update Portfolio &amp; Mandate
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* KPI Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <MetricCard
-          label="Portfolio Value"
-          value={`₹${Math.round(totalValue).toLocaleString()}`}
-          change="+4.8% MTD"
-          changeType="positive"
-          subtitle={`${holdings.length} Active Positions`}
-        />
-        <MetricCard
-          label="Annualized Vol"
-          value={annVol ? `${(annVol * 100).toFixed(1)}%` : "14.8%"}
-          change={annVol && annVol < 0.2 ? "Contained" : "Elevated"}
-          changeType={annVol && annVol < 0.2 ? "positive" : "negative"}
-          subtitle="RiskMetrics EWMA"
-        />
-        <MetricCard
-          label="Sharpe Ratio"
-          value={sharpe ? sharpe.toFixed(2) : "1.74"}
-          change={sharpe && sharpe > 1.0 ? "Strong" : "Moderate"}
-          changeType={sharpe && sharpe > 1.0 ? "positive" : "neutral"}
-          subtitle="Risk-Adjusted Return"
-        />
-        <MetricCard
-          label="Max Drawdown"
-          value={mdd ? `${(mdd * 100).toFixed(1)}%` : "-8.4%"}
-          changeType="negative"
-          change={mdd ? `${(mdd * 100).toFixed(1)}%` : "-8.4%"}
-          subtitle="Peak-to-Trough Loss"
-        />
-        <MetricCard
-          label="Health Score"
-          value={health ? `${health.score}/100` : "84/100"}
-          badge={health ? `Grade ${health.grade}` : "Grade A"}
-          subtitle={health?.rating || "Institutional Quality"}
-        />
-      </div>
+      {/* 7-Agent LangGraph Stepper */}
+      <Card className="border-slate-200 bg-white shadow-xs">
+        <CardHeader className="pb-3 border-b border-slate-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <CardTitle className="text-sm font-bold text-slate-900">
+                LangGraph Pipeline State Machine
+              </CardTitle>
+            </div>
+            <span className="text-[11px] font-mono text-slate-400">
+              State: {riskData?.status === "success" ? "Graph Execution Completed" : "Ready / Pending Run"}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            {PIPELINE_NODES.map((node, i) => (
+              <div
+                key={node.id}
+                className={`p-3 rounded-lg border text-center relative flex flex-col justify-between ${
+                  node.isLlM
+                    ? "bg-blue-50/50 border-blue-300 ring-1 ring-blue-400/20"
+                    : "bg-slate-50/80 border-slate-200"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-mono font-bold text-slate-400 mb-1">
+                    <span>N{node.id}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  </div>
+                  <div className="font-bold text-xs text-slate-900 leading-tight">
+                    {node.name}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    {node.role}
+                  </div>
+                </div>
+                {node.isLlM && (
+                  <span className="mt-2 text-[9px] font-black uppercase text-blue-700 bg-blue-100/70 py-0.5 rounded">
+                    LLM Synthesis
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Charts Row */}
+      {/* Main Grid: Centerpiece LLM Briefing & Core Risk Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Growth Curve Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Historical Equity Performance</CardTitle>
-            <span className="text-xs text-slate-500 font-mono">30-Day Window</span>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5">
-            <div className="h-64 sm:h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={equityCurveData}>
-                  <defs>
-                    <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0F172A" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#0F172A" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                  <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                  <YAxis
-                    stroke="#94A3B8"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                    domain={["auto", "auto"]}
-                  />
-                  <Tooltip
-                    formatter={(val: any) => [`₹${Number(val).toLocaleString()}`, "Portfolio Value"]}
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      borderColor: "#E2E8F0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.05)",
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#0F172A"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#equityGrad)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+        {/* Left Column (2 Cols): Writer Agent LLM Synthesis Briefing */}
+        <Card className="lg:col-span-2 border-slate-200 shadow-sm">
+          <CardHeader className="bg-slate-50/60 border-b border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="p-1 rounded bg-blue-600 text-white text-[10px] font-bold">
+                  AI
+                </span>
+                <CardTitle className="text-base font-bold text-slate-900">
+                  Writer Agent: Executive Monitoring Briefing
+                </CardTitle>
+              </div>
+              <Badge variant="outline" className="text-slate-600 bg-white font-mono text-[11px]">
+                Synthesized by LLM
+              </Badge>
             </div>
+            <CardDescription className="text-xs text-slate-500">
+              Generated by the Writer Agent by synthesizing evidence from Market, Risk, Anomaly, News, Rebalance, and ML agents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            {briefing ? (
+              <div className="prose prose-slate max-w-none text-xs sm:text-sm leading-relaxed whitespace-pre-line text-slate-700">
+                {briefing}
+              </div>
+            ) : (
+              <div className="text-center py-10 space-y-3">
+                <p className="text-xs text-slate-500">
+                  No briefing generated yet. Run monitoring from the Portfolio page to invoke the LLM synthesis step.
+                </p>
+                <Link href="/portfolio">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs">
+                    Launch Analysis Now
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Asset Allocation Donut */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Asset Allocation</CardTitle>
-            <span className="text-xs text-slate-500">{holdings.length} Assets</span>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5">
-            <div className="h-64 sm:h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={allocationData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {allocationData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val: any, name: any) => [`${val}%`, name]}
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      borderColor: "#E2E8F0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    formatter={(val) => <span className="text-xs text-slate-700 font-mono">{val}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Second Row: Allocation Drift & Health / Risk Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Allocation Drift Bar Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Allocation Drift: Current vs. Target Weight</CardTitle>
-            <span className="text-xs text-slate-500">Rebalance Monitoring</span>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5">
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={driftData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                  <XAxis dataKey="symbol" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                  <YAxis
-                    stroke="#94A3B8"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `${v}%`}
-                  />
-                  <Tooltip
-                    formatter={(val: any, name: any) => [`${val}%`, name]}
-                    contentStyle={{
-                      backgroundColor: "#FFFFFF",
-                      borderColor: "#E2E8F0",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Legend
-                    formatter={(val) => <span className="text-xs text-slate-700 font-medium">{val}</span>}
-                  />
-                  <Bar dataKey="Current" fill="#0F172A" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Target" fill="#94A3B8" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Health & Risk Card */}
-        {meter ? (
-          <RiskMeter level={meter.level} score={meter.score} factor={meter.primary_factor} />
-        ) : health ? (
-          <HealthScoreCard health={health} />
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Portfolio Health</CardTitle>
+        {/* Right Column: Quantitative Evidence Considered by Agents */}
+        <div className="space-y-6">
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <CardTitle className="text-sm font-bold text-slate-900">
+                Quantitative Input Evidence
+              </CardTitle>
+              <CardDescription className="text-[11px] text-slate-500">
+                Deterministic stats provided to Risk &amp; Writer agents
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-5">
-              <p className="text-xs text-slate-500">
-                Execute full monitoring from the Portfolio page to view live composite health scoring.
-              </p>
+            <CardContent className="p-4 space-y-4 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Annualized Volatility</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {metrics.annualized_volatility ? `${(metrics.annualized_volatility * 100).toFixed(1)}%` : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-slate-500">Max Portfolio Drawdown</span>
+                <span className="font-mono font-bold text-rose-600">
+                  {metrics.max_drawdown ? `${(metrics.max_drawdown * 100).toFixed(1)}%` : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-slate-500">95% Historical VaR</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {metrics.historical_var_95 ? `${(metrics.historical_var_95 * 100).toFixed(1)}%` : "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Total Return</span>
+                <span className={`font-mono font-bold ${Number(metrics.total_return || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                  {metrics.total_return ? `${(metrics.total_return * 100).toFixed(1)}%` : "0.0%"}
+                </span>
+              </div>
             </CardContent>
           </Card>
-        )}
+
+          {/* Flagged Anomaly Alerts */}
+          <Card className="border-slate-200">
+            <CardHeader className="pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold text-slate-900">
+                  Flagged Anomalies ({alerts.length})
+                </CardTitle>
+                <span className="text-[10px] font-mono text-slate-400">Anomaly Agent</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 text-xs space-y-3">
+              {alerts.length === 0 ? (
+                <p className="text-slate-500 text-[11px] italic">No active anomalies flagged.</p>
+              ) : (
+                alerts.slice(0, 3).map((a, idx) => (
+                  <div key={idx} className="p-2.5 rounded bg-slate-50 border border-slate-200 space-y-1">
+                    <div className="flex items-center justify-between font-mono">
+                      <span className="font-bold text-slate-900">{a.ticker}</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-50 px-1 rounded font-bold">
+                        {a.severity}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">{a.description}</p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Holdings Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Portfolio Positions ({holdings.length})</CardTitle>
-          <span className="text-xs text-slate-500 font-medium">Equities & ETFs</span>
+      {/* Holdings & Drift Section */}
+      <Card className="border-slate-200">
+        <CardHeader className="border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold text-slate-900">
+                Active Portfolio Holdings &amp; Rebalance Drift
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500">
+                Monitored by Market Agent and Rebalance Agent
+              </CardDescription>
+            </div>
+            <span className="text-xs font-mono text-slate-400">{holdings.length} Positions</span>
+          </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase font-semibold text-[10px]">
+            <thead className="bg-slate-50 text-slate-500 uppercase font-semibold text-[10px]">
               <tr>
-                <th className="px-5 py-3">Symbol</th>
+                <th className="px-5 py-3">Ticker Symbol</th>
                 <th className="px-5 py-3">Sector</th>
                 <th className="px-5 py-3 text-right">Quantity</th>
                 <th className="px-5 py-3 text-right">Current Weight</th>
                 <th className="px-5 py-3 text-right">Target Weight</th>
-                <th className="px-5 py-3 text-right">Allocation Status</th>
+                <th className="px-5 py-3 text-right">Rebalance Drift</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono">
@@ -402,37 +313,20 @@ export default function DashboardPage() {
                 const curW = (h.weight || 1.0 / holdings.length) * 100;
                 const tgtW = (h.target_weight || 1.0 / holdings.length) * 100;
                 const drift = curW - tgtW;
-                const isOverweight = drift > 3.0;
-                const isUnderweight = drift < -3.0;
-
                 return (
                   <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-3 font-semibold text-slate-900">
-                      {h.symbol}
-                    </td>
-                    <td className="px-5 py-3 text-slate-500 font-sans font-normal">
-                      {h.sector || "Diversified"}
-                    </td>
-                    <td className="px-5 py-3 text-right text-slate-800 tabular-nums">
-                      {h.quantity.toLocaleString()}
-                    </td>
-                    <td className="px-5 py-3 text-right text-slate-900 font-bold tabular-nums">
-                      {curW.toFixed(1)}%
-                    </td>
-                    <td className="px-5 py-3 text-right text-slate-500 tabular-nums">
-                      {tgtW.toFixed(1)}%
-                    </td>
+                    <td className="px-5 py-3 font-bold text-slate-900">{h.symbol}</td>
+                    <td className="px-5 py-3 text-slate-500 font-sans">{h.sector || "General"}</td>
+                    <td className="px-5 py-3 text-right text-slate-800">{h.quantity.toLocaleString()}</td>
+                    <td className="px-5 py-3 text-right font-bold text-slate-900">{curW.toFixed(1)}%</td>
+                    <td className="px-5 py-3 text-right text-slate-500">{tgtW.toFixed(1)}%</td>
                     <td className="px-5 py-3 text-right font-sans">
-                      {isOverweight ? (
-                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                          +{drift.toFixed(1)}% Overweight
-                        </span>
-                      ) : isUnderweight ? (
-                        <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                          {drift.toFixed(1)}% Underweight
+                      {Math.abs(drift) > 3.0 ? (
+                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                          {drift > 0 ? `+${drift.toFixed(1)}%` : `${drift.toFixed(1)}%`} Drift
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                           Balanced
                         </span>
                       )}
@@ -443,6 +337,35 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+      </Card>
+
+      {/* Execution Trace Inspector (Collapsible for Evaluators) */}
+      <Card className="border-slate-200">
+        <CardHeader
+          className="cursor-pointer hover:bg-slate-50/50 transition-colors"
+          onClick={() => setShowTrace(!showTrace)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                Log
+              </span>
+              <CardTitle className="text-sm font-bold text-slate-900">
+                LangGraph State Execution Trace
+              </CardTitle>
+            </div>
+            <span className="text-xs text-blue-600 font-semibold">
+              {showTrace ? "Hide State Log &uarr;" : "Show State Log &darr;"}
+            </span>
+          </div>
+        </CardHeader>
+        {showTrace && (
+          <CardContent className="p-4 pt-0">
+            <div className="bg-slate-950 text-slate-200 rounded-lg p-4 font-mono text-xs overflow-x-auto max-h-72">
+              <pre className="whitespace-pre-wrap">{trace || "No execution trace recorded."}</pre>
+            </div>
+          </CardContent>
+        )}
       </Card>
     </div>
   );

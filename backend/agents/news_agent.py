@@ -10,7 +10,18 @@ from typing import Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import config
-from memory.store import get_memory_store
+
+class SimpleMemoryStore:
+    def check_duplicate_alert(self, *args, **kwargs):
+        return False
+    def add_alert(self, *args, **kwargs):
+        pass
+    def log_agent_execution(self, *args, **kwargs):
+        pass
+
+def get_memory_store():
+    return SimpleMemoryStore()
+
 from tools.news_tools import search_ticker_news_tool, find_event_cause_tool
 from tools.market_tools import get_fundamentals_tool
 

@@ -1,238 +1,142 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
-import { getStatus, getMarketStatus, MarketStatus } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
+const AGENTS = [
+  {
+    step: "1",
+    name: "Market Agent",
+    role: "Data Ingestion",
+    description: "Fetches price feeds, calculates daily returns, volume, and momentum across assets.",
+    tech: "Yahoo Finance API / Pandas",
+  },
+  {
+    step: "2",
+    name: "Risk Agent",
+    role: "Quantitative Risk",
+    description: "Assesses portfolio drawdown against user mandate (conservative/balanced/aggressive).",
+    tech: "VaR & Volatility Statistics",
+  },
+  {
+    step: "3",
+    name: "Anomaly Agent",
+    role: "Statistical Screening",
+    description: "Detects return spikes, tail shocks, and statistical outliers to flag for investigation.",
+    tech: "EWMA Variance & Z-Scores",
+  },
+  {
+    step: "4",
+    name: "News Agent",
+    role: "Context Retrieval",
+    description: "Searches targeted financial news to retrieve ground truth explaining WHY an anomaly occurred.",
+    tech: "Tavily / DDG Web Search",
+  },
+  {
+    step: "5",
+    name: "Rebalance Agent",
+    role: "Drift Detection",
+    description: "Evaluates active portfolio weights vs. target allocation and flags drifting positions.",
+    tech: "Tolerance Threshold Checks",
+  },
+  {
+    step: "6",
+    name: "ML Agent",
+    role: "Regime Forecasting",
+    description: "Forecasts forward volatility trajectory and classifies the current market regime.",
+    tech: "Rolling Volatility Projections",
+  },
+  {
+    step: "7",
+    name: "Writer Agent",
+    role: "LLM Synthesis (Centerpiece)",
+    description: "Synthesizes evidence from all 6 upstream agents into an executive monitoring briefing.",
+    tech: "LiteLLM / OpenAI Engine",
+    highlight: true,
+  },
+];
+
 export default function HomePage() {
-  const [systemOnline, setSystemOnline] = useState<boolean | null>(null);
-  const [marketData, setMarketData] = useState<MarketStatus | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    const checkSystem = async () => {
-      try {
-        await getStatus();
-        if (mounted) setSystemOnline(true);
-      } catch (err) {
-        if (mounted) setSystemOnline(false);
-      }
-
-      try {
-        const m = await getMarketStatus();
-        if (mounted) setMarketData(m);
-      } catch (e) {
-        // quiet fallback
-      }
-    };
-    checkSystem();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
   return (
-    <div className="space-y-8">
-      {/* Live Market Ticker Tape */}
-      <div className="w-full bg-white border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-xs overflow-x-auto flex items-center gap-6 text-xs whitespace-nowrap">
-        <span className="font-semibold text-slate-500 uppercase tracking-wider text-[10px] flex items-center gap-1.5 shrink-0">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          Live Tickers:
-        </span>
-        {marketData?.gainers_today.map((g) => (
-          <div key={g.symbol} className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800">{g.symbol}</span>
-            <span className="font-mono text-slate-600">₹{g.price.toFixed(1)}</span>
-            <span className="font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">
-              +{g.change_pct}%
-            </span>
-          </div>
-        ))}
-        {marketData?.losers_today.slice(0, 2).map((l) => (
-          <div key={l.symbol} className="flex items-center gap-2">
-            <span className="font-semibold text-slate-800">{l.symbol}</span>
-            <span className="font-mono text-slate-600">₹{l.price.toFixed(1)}</span>
-            <span className="font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded text-[11px]">
-              {l.change_pct}%
-            </span>
-          </div>
-        ))}
+    <div className="space-y-10 py-4">
+      {/* Hero Overview */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 shadow-sm text-center max-w-4xl mx-auto space-y-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
+          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+          <span>Subject: Agentic AI</span>
+          <span className="text-blue-300">•</span>
+          <span>Orchestration: LangGraph StateGraph</span>
+        </div>
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          Investment Portfolio Monitoring Agent
+        </h1>
+
+        <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+          An autonomous multi-agent system demonstrating graph orchestration, deterministic screening,
+          web retrieval, and LLM reasoning. Seven specialized agents collaborate sequentially to monitor
+          portfolio risk and deliver an executive briefing memo.
+        </p>
+
+        <div className="pt-2 flex flex-wrap justify-center gap-4">
+          <Link href="/portfolio">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 shadow-sm">
+              Upload Portfolio &amp; Run Agents &rarr;
+            </Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button variant="outline" size="lg" className="border-slate-300 font-semibold text-slate-700">
+              View Monitoring Center
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-8 sm:p-12 shadow-sm relative overflow-hidden">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
-            <span>Portfolio Intelligence v2.0</span>
-            <span className="text-slate-300">•</span>
-            <span>
-              Engine:{" "}
-              {systemOnline === true
-                ? "Online"
-                : systemOnline === false
-                ? "Connecting..."
-                : "Checking"}
-            </span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-            Investment Portfolio <br className="hidden sm:inline" />
-            Monitoring & Risk Intelligence
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl font-normal">
-            An institutional-grade risk monitoring engine designed for active portfolios.
-            Delivers quantitative downside metrics, multivariate anomaly detection,
-            volatility forecasting, and news attribution—without trading noise.
+      {/* 7-Agent Architecture Section */}
+      <div className="space-y-6">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-bold text-slate-900">Multi-Agent Workflow Architecture</h2>
+          <p className="text-xs text-slate-500">
+            A state graph passing structured context sequentially through specialized agent nodes
           </p>
-
-          <div className="pt-4 flex flex-wrap items-center gap-3">
-            <Link href="/portfolio">
-              <Button variant="primary" size="lg">
-                Import Portfolio CSV
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="outline" size="lg">
-                View Live Dashboard
-              </Button>
-            </Link>
-            <Link href="/risk">
-              <Button variant="ghost" size="lg">
-                Risk Analytics Suite →
-              </Button>
-            </Link>
-          </div>
         </div>
-      </div>
 
-      {/* Institutional Core Pillars */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <PillarCard
-          title="Portfolio Health Score"
-          metric="0 — 100"
-          badge="Composite Index"
-          description="Multidimensional evaluation assessing diversification (HHI), volatility control, and single-stock concentration."
-          href="/dashboard"
-        />
-        <PillarCard
-          title="Downside Risk Analytics"
-          metric="VaR & CVaR 95%"
-          badge="RiskMetrics™"
-          description="Parametric Cornish-Fisher VaR, historical drawdown duration, Sortino and Sharpe efficiency ratios."
-          href="/risk"
-        />
-        <PillarCard
-          title="Two-Stage Anomaly Detection"
-          metric="z-score + Isolation Forest"
-          badge="Multi-Stage"
-          description="Deterministic volatility spikes combined with unsupervised multivariate ML to catch joint tail risk."
-          href="/alerts"
-        />
-        <PillarCard
-          title="Volatility Forecasting"
-          metric="5-Day Horizon"
-          badge="Multi-Model"
-          description="Time-series cross-validated forecasts evaluated across Linear Regression, Random Forest, and XGBoost."
-          href="/forecast"
-        />
-      </div>
-
-      {/* Quick Start / Workflow Steps */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Streamlined Portfolio Workflow</CardTitle>
-          <span className="text-xs text-slate-500 font-medium">3-Step Onboarding</span>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-bold text-sm flex items-center justify-center">
-                1
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">Upload Positions</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Provide a simple CSV containing <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">symbol,quantity</code> or load the pre-configured 5-holding sample portfolio.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-bold text-sm flex items-center justify-center">
-                2
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">Configure Mandate</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Select your investment tolerance (Conservative, Balanced, or Aggressive) and set custom historical lookback windows.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-bold text-sm flex items-center justify-center">
-                3
-              </div>
-              <h4 className="font-semibold text-slate-900 text-sm">Instant Analytics</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Gain immediate visibility into portfolio health, asset allocation drift, drawdown risks, and ML volatility projections.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Compliance & Institutional Disclaimer */}
-      <div className="bg-slate-100/70 border border-slate-200 rounded-xl p-4 text-xs text-slate-500 leading-relaxed flex items-start gap-3">
-        <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
-          ℹ
-        </div>
-        <div>
-          <span className="font-semibold text-slate-700">Institutional Monitoring Notice: </span>
-          This system is an investment analytics, risk monitoring, and anomaly detection platform. It does not execute trades, manage custody of assets, or issue mandatory buy/sell recommendations. All risk calculations follow standardized quantitative finance methodologies.
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {AGENTS.map((agent) => (
+            <Card
+              key={agent.step}
+              className={`transition-all hover:shadow-md ${
+                agent.highlight ? "border-blue-500 ring-2 ring-blue-500/10 bg-blue-50/20" : "border-slate-200"
+              }`}
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                    Node {agent.step}
+                  </span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded">
+                    {agent.role}
+                  </span>
+                </div>
+                <CardTitle className="text-base font-bold text-slate-900 mt-2">
+                  {agent.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-xs">
+                <p className="text-slate-600 leading-relaxed">
+                  {agent.description}
+                </p>
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                  <span>Engine:</span>
+                  <span className="text-slate-700 font-semibold">{agent.tech}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>
-  );
-}
-
-function PillarCard({
-  title,
-  metric,
-  badge,
-  description,
-  href,
-}: {
-  title: string;
-  metric: string;
-  badge: string;
-  description: string;
-  href: string;
-}) {
-  return (
-    <Link href={href} className="group block">
-      <Card className="h-full group-hover:border-slate-400 group-hover:shadow-card transition-all">
-        <CardContent className="p-5 flex flex-col justify-between h-full space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                {badge}
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-              {title}
-            </h3>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed font-normal">
-              {description}
-            </p>
-          </div>
-          <div className="pt-2 border-t border-slate-100 flex items-baseline justify-between">
-            <span className="text-sm font-bold text-slate-800 font-mono">
-              {metric}
-            </span>
-            <span className="text-xs text-slate-400 group-hover:text-slate-900 transition-colors font-semibold">
-              Explore →
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
   );
 }

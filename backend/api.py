@@ -14,7 +14,11 @@ for directory in (str(backend_dir), str(parent_dir)):
     if directory not in sys.path:
         sys.path.insert(0, directory)
 
-from backend.server.main import app, create_app
+try:
+    from backend.api.main import app, create_app
+except ImportError:
+    from api.main import app, create_app
+
 import config
 
 # Export app for ASGI servers (uvicorn api:app or uvicorn backend.api:app)
@@ -31,11 +35,11 @@ if __name__ == "__main__":
     print("=" * 65)
     print(f"  Model:       {config.get_primary_model()['name']}")
     print(f"  Port:        {port}")
-    print(f"  Environment: Production Fintech Architecture (v2.0)")
+    print("  Environment: Production Fintech Architecture (v2.0)")
     print("=" * 65)
 
     uvicorn.run(
-        "backend.api:app",
+        app,
         host="0.0.0.0",
         port=port,
         reload=False

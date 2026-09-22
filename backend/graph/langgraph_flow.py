@@ -17,14 +17,24 @@ except ImportError:
     LANGGRAPH_AVAILABLE = False
     print("Warning: LangGraph not installed. Install with: pip install langgraph")
 
-from core.portfolio import Portfolio
-from agents.market_agent import MarketAgent
-from agents.risk_agent import RiskAgent
-from agents.anomaly_agent import AnomalyAgent
-from agents.news_agent import NewsAgent
-from agents.rebalance_agent import RebalanceAgent
-from agents.ml_agent import MLAgent
-from agents.writer_agent import WriterAgent
+try:
+    from backend.core.portfolio import Portfolio
+    from backend.agents.market_agent import MarketAgent
+    from backend.agents.risk_agent import RiskAgent
+    from backend.agents.anomaly_agent import AnomalyAgent
+    from backend.agents.news_agent import NewsAgent
+    from backend.agents.rebalance_agent import RebalanceAgent
+    from backend.agents.ml_agent import MLAgent
+    from backend.agents.writer_agent import WriterAgent
+except ImportError:
+    from core.portfolio import Portfolio
+    from agents.market_agent import MarketAgent
+    from agents.risk_agent import RiskAgent
+    from agents.anomaly_agent import AnomalyAgent
+    from agents.news_agent import NewsAgent
+    from agents.rebalance_agent import RebalanceAgent
+    from agents.ml_agent import MLAgent
+    from agents.writer_agent import WriterAgent
 
 
 # Define state schema
