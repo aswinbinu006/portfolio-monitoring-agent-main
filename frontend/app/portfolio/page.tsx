@@ -100,7 +100,7 @@ ITC.NS,150,0.15`;
           Portfolio Import & Configuration
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Import your holdings CSV and set institutional risk tolerance thresholds.
+          Import your holdings CSV and set mandate risk tolerance thresholds.
         </p>
       </div>
 

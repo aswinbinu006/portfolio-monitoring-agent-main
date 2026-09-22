@@ -44,7 +44,7 @@ export function RiskMeter({ level, score, factor, className = "" }: RiskMeterPro
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Institutional Risk Meter</CardTitle>
+        <CardTitle>Portfolio Risk Meter</CardTitle>
         <span
           className={`text-xs font-bold px-2.5 py-1 rounded-md border ${config.bgColor} ${config.textColor} ${config.borderColor}`}
         >
@@ -60,7 +60,7 @@ export function RiskMeter({ level, score, factor, className = "" }: RiskMeterPro
           <span className="text-xs font-medium text-slate-500">Composite Risk Index</span>
         </div>
 
-        {/* 3-segment institutional meter bar */}
+        {/* 3-segment composite meter bar */}
         <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex gap-0.5">
           <div
             className={`h-full transition-all duration-500 ${

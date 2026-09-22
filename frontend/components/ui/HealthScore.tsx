@@ -45,7 +45,7 @@ export function HealthScoreCard({ health, className = "" }: HealthScoreCardProps
               Evaluation
             </span>
             <span className="text-xs font-medium text-slate-600">
-              Institutional Baseline
+              Mandate Baseline
             </span>
           </div>
         </div>
