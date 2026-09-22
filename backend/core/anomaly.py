@@ -338,3 +338,72 @@ def summarize_anomalies(anomalies: List[AnomalyEvent]) -> Dict:
         'total_contribution': sum(a.contribution for a in anomalies),
         'events': anomalies
     }
+
+
+def detect_anomalies_isolation_forest(
+    asset_returns: pd.DataFrame,
+    contamination: float = 0.05,
+    random_state: int = 42
+) -> List[Dict[str, Any]]:
+    """
+    Multivariate Anomaly Detection using scikit-learn IsolationForest.
+    Extracts multidimensional feature vectors per asset (return, rolling volatility,
+    momentum z-score, and downside tail skew) to catch multivariate outliers
+    that single-variable thresholds miss.
+    
+    Returns:
+        List of detected anomaly dictionaries with scores and explanations.
+    """
+    from sklearn.ensemble import IsolationForest
+    
+    clean_df = asset_returns.dropna()
+    if len(clean_df) < 20:
+        return []
+        
+    records = []
+    
+    for ticker in clean_df.columns:
+        series = clean_df[ticker]
+        rolling_std = series.rolling(window=15, min_periods=5).std().fillna(series.std())
+        rolling_mean = series.rolling(window=15, min_periods=5).mean().fillna(series.mean())
+        
+        # Build feature matrix: [return, rolling_vol, z_score, squared_deviation]
+        X = pd.DataFrame({
+            "return": series,
+            "volatility": rolling_std,
+            "z_score": (series - rolling_mean) / (rolling_std.replace(0, 1e-6)),
+            "sq_dev": (series - rolling_mean) ** 2
+        }).dropna()
+        
+        if len(X) < 15:
+            continue
+            
+        iso = IsolationForest(
+            contamination=contamination,
+            random_state=random_state,
+            n_estimators=100
+        )
+        preds = iso.fit_predict(X)
+        scores = iso.decision_function(X)
+        
+        # Check if the most recent data point is flagged as an anomaly (-1)
+        if preds[-1] == -1:
+            anomaly_score = float(-scores[-1])  # higher means more anomalous
+            recent_ret = float(series.iloc[-1])
+            recent_z = float(X["z_score"].iloc[-1])
+            
+            records.append({
+                "ticker": ticker,
+                "date": clean_df.index[-1].strftime("%Y-%m-%d") if hasattr(clean_df.index[-1], "strftime") else str(clean_df.index[-1]),
+                "model": "Isolation Forest (Unsupervised)",
+                "anomaly_score": round(anomaly_score, 3),
+                "return_value": round(recent_ret, 4),
+                "z_score": round(recent_z, 2),
+                "explanation": (
+                    f"Multivariate outlier detected (score {anomaly_score:.2f}). "
+                    f"Asset exhibited an atypical joint return/volatility pattern: "
+                    f"{recent_ret:+.2%} return at {recent_z:+.1f}σ from recent distribution."
+                )
+            })
+            
+    return records

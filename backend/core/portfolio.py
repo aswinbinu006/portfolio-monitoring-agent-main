@@ -204,24 +204,59 @@ class Portfolio:
         """
         df = pd.read_csv(filepath)
         
+        # Clean column names (strip whitespace)
+        df.columns = [str(c).strip() for c in df.columns]
+        
+        # Normalize column names to standard lowercase equivalents
+        col_map = {}
+        for col in df.columns:
+            clean_col = col.lower().replace(" ", "_")
+            if clean_col in ('ticker', 'symbol', 'asset', 'stock'):
+                col_map[col] = 'ticker'
+            elif clean_col in ('quantity', 'qty', 'shares', 'units'):
+                col_map[col] = 'quantity'
+            elif clean_col in ('target_weight', 'targetweight', 'target_wt', 'weight'):
+                col_map[col] = 'target_weight'
+        df = df.rename(columns=col_map)
+        
         required_cols = {'ticker', 'quantity'}
         if not required_cols.issubset(df.columns):
-            raise ValueError(f"CSV must contain columns: {required_cols}")
+            raise ValueError(
+                f"CSV must contain 'symbol' (or 'ticker') and 'quantity' columns. Found columns: {list(df.columns)}"
+            )
+        
+        # Drop rows with missing ticker or quantity
+        df = df.dropna(subset=['ticker', 'quantity'])
         
         holdings = []
         for _, row in df.iterrows():
+            ticker_val = str(row['ticker']).strip()
+            if not ticker_val:
+                continue
+            
+            try:
+                qty_val = float(row['quantity'])
+            except (ValueError, TypeError):
+                raise ValueError(f"Invalid quantity '{row['quantity']}' for ticker '{ticker_val}'")
+            
             target_weight = row.get('target_weight', None)
             if pd.notna(target_weight):
-                target_weight = float(target_weight)
+                try:
+                    target_weight = float(target_weight)
+                except (ValueError, TypeError):
+                    target_weight = None
             else:
                 target_weight = None
             
             holdings.append(Holding(
-                ticker=str(row['ticker']),
-                quantity=float(row['quantity']),
+                ticker=ticker_val,
+                quantity=qty_val,
                 target_weight=target_weight
             ))
         
+        if not holdings:
+            raise ValueError("No valid holdings found in uploaded CSV")
+            
         return cls(holdings=holdings, **kwargs)
     
     def to_csv(self, filepath: str):
