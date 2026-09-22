@@ -67,7 +67,7 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="space-y-6 py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="h-8 w-64 bg-slate-200 animate-pulse rounded-md" />
         <div className="h-40 bg-white border border-slate-200 rounded-xl animate-pulse" />
         <TableSkeleton rows={5} />
@@ -78,7 +78,7 @@ function DashboardContent() {
   // If no holdings loaded yet
   if (!holdings || holdings.length === 0) {
     return (
-      <div className="py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <EmptyState
           title="No Active Portfolio Loaded"
           description="Upload a portfolio CSV or load benchmark holdings to run the 7-agent LangGraph monitoring pipeline."
@@ -95,7 +95,7 @@ function DashboardContent() {
   const orchestratorEngine = riskData?.orchestrator_engine || "LangGraph StateGraph";
 
   return (
-    <div className="space-y-8 py-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>

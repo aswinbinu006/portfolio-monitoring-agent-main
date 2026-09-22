@@ -95,7 +95,7 @@ ITC.NS,150,0.15`;
 
   return (
     <AuthGuard>
-      <div className="space-y-8 max-w-5xl mx-auto">
+      <div className="space-y-8 max-w-5xl mx-auto py-6 sm:py-8 px-4 sm:px-6">
         {/* Header */}
         <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">

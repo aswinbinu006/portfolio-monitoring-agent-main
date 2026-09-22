@@ -13,8 +13,10 @@ const config: Config = {
         fintech: {
           bg: "#F8FAFC",
           card: "#FFFFFF",
+          section: "#F1F5F9",
           border: "#E2E8F0",
           navy: "#0F172A",
+          darkNavy: "#1E3A8A",
           slate: "#1E293B",
           muted: "#64748B",
           accent: "#2563EB",
@@ -36,6 +38,7 @@ const config: Config = {
         elevated: "0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.03)",
       },
       borderRadius: {
+        "14": "14px",
         xl: "12px",
         "2xl": "16px",
       },
