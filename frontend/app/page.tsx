@@ -84,9 +84,13 @@ const AGENTS: AgentNodeInfo[] = [
 
 export default function HomePage() {
   const [sectionVisible, setSectionVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const architectureRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("portfolio_agent_jwt") : null;
+    setIsLoggedIn(!!token);
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -103,6 +107,12 @@ export default function HomePage() {
 
     return () => observer.disconnect();
   }, []);
+
+  const scrollToArchitecture = () => {
+    if (architectureRef.current) {
+      architectureRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <div className="space-y-16 py-4">
@@ -148,37 +158,74 @@ export default function HomePage() {
             a Large Language Model (LLM) reasoning centerpiece to produce an executive briefing memo.
           </p>
 
-          {/* Elevated Call-To-Action Buttons */}
+          {/* Elevated Call-To-Action Buttons — Contextually Aware of Auth State */}
           <div className="pt-3 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/portfolio" className="group">
-              <button className="relative inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md hover:shadow-blue-500/25 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
-                <span>Upload Portfolio &amp; Run Agents</span>
-                <svg
-                  className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/portfolio" className="group">
+                  <button className="relative inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 border border-blue-400/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
+                    <span>Launch Portfolio Monitoring</span>
+                    <svg
+                      className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </Link>
 
-            <Link href="/dashboard" className="group">
-              <button className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-xs transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
-                <span>View Monitoring Center</span>
-                <svg
-                  className="w-4 h-4 text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                <Link href="/dashboard" className="group">
+                  <button className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-xs transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
+                    <span>View Monitoring Center</span>
+                    <svg
+                      className="w-4 h-4 text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M9 19l7-7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="group">
+                  <button className="relative inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 border border-blue-400/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
+                    <span>Get Started / Sign In</span>
+                    <svg
+                      className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                </Link>
+
+                <button
+                  onClick={scrollToArchitecture}
+                  className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm shadow-xs transition-all duration-200 hover:-translate-y-0.5 cursor-pointer"
                 >
-                  <path d="M9 19l7-7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </Link>
+                  <span>Explore 7-Agent Architecture</span>
+                  <svg
+                    className="w-4 h-4 text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>

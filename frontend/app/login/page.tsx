@@ -46,8 +46,14 @@ export default function LoginPage() {
     <div className="min-h-[75vh] flex items-center justify-center py-10 px-4">
       <Card className="w-full max-w-md border-slate-200 dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
         <CardHeader className="text-center space-y-2 pb-6 border-b border-slate-100 dark:border-slate-800">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center mx-auto shadow-xs font-bold text-lg">
-            AI
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center mx-auto shadow-md shadow-blue-500/20">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.2" />
+              <circle cx="4" cy="6" r="2" />
+              <circle cx="20" cy="6" r="2" />
+              <circle cx="12" cy="20" r="2" />
+              <path d="M5.5 7.5L10.5 10.5M18.5 7.5L13.5 10.5M12 15V18" strokeDasharray="1.5 1.5" />
+            </svg>
           </div>
           <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             {isSignUp ? "Create Agent Session Account" : "Sign In to Portfolio Agent"}
@@ -97,19 +103,12 @@ export default function LoginPage() {
 
             <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2.5 shadow-xs transition-colors mt-2"
+              loading={loading}
+              className="w-full mt-2"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Processing...</span>
-                </span>
-              ) : isSignUp ? (
-                "Create Account & Continue"
-              ) : (
-                "Sign In"
-              )}
+              {isSignUp ? "Create Account & Continue" : "Sign In"}
             </Button>
           </form>
 

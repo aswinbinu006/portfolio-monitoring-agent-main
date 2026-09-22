@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import PipelineStepperModal from "@/components/PipelineStepperModal";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function PortfolioUploadPage() {
   const router = useRouter();
@@ -93,9 +94,10 @@ ITC.NS,150,0.15`;
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div>
+    <AuthGuard>
+      <div className="space-y-8 max-w-5xl mx-auto">
+        {/* Header */}
+        <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
           Portfolio Import & Configuration
         </h1>
@@ -325,7 +327,7 @@ ITC.NS,150,0.15`;
                   {analyzing ? "Running Multi-Agent Engine..." : "Execute Risk Analysis"}
                 </Button>
                 <p className="text-[11px] text-slate-400 text-center mt-2">
-                  Fetches live prices, runs EWMA, and forecasts volatility.
+                  Fetches live prices, tracks anomalies, and synthesizes 7-agent briefing.
                 </p>
               </div>
             </CardContent>
@@ -339,5 +341,6 @@ ITC.NS,150,0.15`;
         isComplete={isStepComplete}
       />
     </div>
+  </AuthGuard>
   );
 }

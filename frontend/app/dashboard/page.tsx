@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import AuthGuard from "@/components/AuthGuard";
 
 const PIPELINE_NODES = [
   { id: 1, name: "Market Agent", role: "Prices & Feeds" },
@@ -25,7 +26,7 @@ const PIPELINE_NODES = [
   { id: 7, name: "Writer Agent", role: "LLM Synthesis", isLlM: true },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [riskData, setRiskData] = useState<any>(null);
@@ -202,7 +203,7 @@ export default function DashboardPage() {
                   No briefing generated yet. Run monitoring from the Portfolio page to invoke the LLM synthesis step.
                 </p>
                 <Link href="/portfolio">
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs">
+                  <Button variant="primary" size="sm">
                     Launch Analysis Now
                   </Button>
                 </Link>
@@ -368,5 +369,13 @@ export default function DashboardPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <AuthGuard>
+      <DashboardContent />
+    </AuthGuard>
   );
 }

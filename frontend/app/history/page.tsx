@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import AuthGuard from "@/components/AuthGuard";
 
-export default function HistoryPage() {
+function HistoryContent() {
   const [loading, setLoading] = useState(true);
   const [historyList, setHistoryList] = useState<HistorySummary[]>([]);
   const [selectedRun, setSelectedRun] = useState<HistoryDetail | null>(null);
@@ -77,7 +78,7 @@ export default function HistoryPage() {
         </div>
 
         <Link href="/portfolio">
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs">
+          <Button variant="primary" size="sm">
             Run New Analysis &rarr;
           </Button>
         </Link>
@@ -258,5 +259,13 @@ export default function HistoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <AuthGuard>
+      <HistoryContent />
+    </AuthGuard>
   );
 }
