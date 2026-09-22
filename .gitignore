@@ -60,6 +60,8 @@ Thumbs.db
 # Temporary files
 temp_portfolio.csv
 *.log
+*.db
+backend/data/*.db
 
 # Offline data
 offline_portfolio.parquet

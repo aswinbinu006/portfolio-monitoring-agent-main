@@ -7,7 +7,6 @@ try:
     import config
 except ImportError:
     from backend import config
-from backend.api.dependencies import app_state
 
 router = APIRouter(tags=["System"])
 
@@ -20,7 +19,8 @@ async def root():
         "status": "ok",
         "service": "Investment Portfolio Monitoring Agent API",
         "version": "2.0.0",
-        "environment": "production",
+        "orchestrator": "LangGraph StateGraph",
+        "storage": "SQLite Persistent Agent Memory",
         "model": config.get_primary_model()["name"],
         "timestamp": datetime.utcnow().isoformat(),
     }
@@ -28,15 +28,11 @@ async def root():
 
 @router.get("/api/status")
 async def get_system_status():
-    """Telemetry endpoint reporting active portfolio status and session variables."""
-    has_portfolio = app_state.current_portfolio is not None
-    holdings_count = len(app_state.current_portfolio.holdings) if has_portfolio else 0
-    analysis_done = app_state.latest_results is not None
-
+    """Telemetry endpoint reporting system readiness."""
     return {
-        "portfolio_loaded": has_portfolio,
-        "portfolio_holdings": holdings_count,
-        "analysis_complete": analysis_done,
+        "status": "online",
+        "database": "sqlite",
+        "orchestrator": "LangGraph StateGraph",
         "model": config.get_primary_model()["name"],
         "timestamp": datetime.utcnow().isoformat(),
     }

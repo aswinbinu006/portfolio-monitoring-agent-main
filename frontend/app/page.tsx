@@ -62,19 +62,19 @@ export default function HomePage() {
   return (
     <div className="space-y-10 py-4">
       {/* Hero Overview */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-8 sm:p-12 shadow-sm text-center max-w-4xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 sm:p-12 shadow-sm text-center max-w-4xl mx-auto space-y-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold">
           <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
           <span>Subject: Agentic AI</span>
-          <span className="text-blue-300">•</span>
+          <span className="text-blue-300 dark:text-blue-600">•</span>
           <span>Orchestration: LangGraph StateGraph</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
           Investment Portfolio Monitoring Agent
         </h1>
 
-        <p className="text-slate-600 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+        <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
           An autonomous multi-agent system demonstrating graph orchestration, deterministic screening,
           web retrieval, and LLM reasoning. Seven specialized agents collaborate sequentially to monitor
           portfolio risk and deliver an executive briefing memo.
@@ -87,7 +87,7 @@ export default function HomePage() {
             </Button>
           </Link>
           <Link href="/dashboard">
-            <Button variant="outline" size="lg" className="border-slate-300 font-semibold text-slate-700">
+            <Button variant="outline" size="lg" className="border-slate-300 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200">
               View Monitoring Center
             </Button>
           </Link>
@@ -97,8 +97,8 @@ export default function HomePage() {
       {/* 7-Agent Architecture Section */}
       <div className="space-y-6">
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-bold text-slate-900">Multi-Agent Workflow Architecture</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Multi-Agent Workflow Architecture</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             A state graph passing structured context sequentially through specialized agent nodes
           </p>
         </div>
@@ -108,29 +108,31 @@ export default function HomePage() {
             <Card
               key={agent.step}
               className={`transition-all hover:shadow-md ${
-                agent.highlight ? "border-blue-500 ring-2 ring-blue-500/10 bg-blue-50/20" : "border-slate-200"
+                agent.highlight
+                  ? "border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/10 bg-blue-50/20 dark:bg-blue-950/20"
+                  : "border-slate-200 dark:border-slate-800"
               }`}
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 border-b-0">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                     Node {agent.step}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-100/60 px-2 py-0.5 rounded">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-950/60 px-2 py-0.5 rounded">
                     {agent.role}
                   </span>
                 </div>
-                <CardTitle className="text-base font-bold text-slate-900 mt-2">
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2">
                   {agent.name}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-xs">
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                   {agent.description}
                 </p>
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-mono">
                   <span>Engine:</span>
-                  <span className="text-slate-700 font-semibold">{agent.tech}</span>
+                  <span className="text-slate-700 dark:text-slate-200 font-semibold">{agent.tech}</span>
                 </div>
               </CardContent>
             </Card>

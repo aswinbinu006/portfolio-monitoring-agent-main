@@ -1,16 +1,62 @@
 /**
- * Centralized Institutional API Client for Portfolio Monitoring.
- * Features Axios interceptors, automatic retries with exponential backoff,
- * robust error normalization, and strict TypeScript models.
+ * Centralized API Client for Portfolio Monitoring.
+ * Features JWT authentication interceptors, SQLite persistent memory calls,
+ * automatic error handling, and strict TypeScript contracts.
  */
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://portfolio-monitoring-agent-main.onrender.com";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:7860";
 
 // ============================================================================
 // DATA MODELS
 // ============================================================================
+
+export interface User {
+  id: number;
+  email: string;
+  created_at?: string;
+}
+
+export interface AuthResponse {
+  status: string;
+  message: string;
+  token: string;
+  user: User;
+}
+
+export interface HistorySummary {
+  id: number;
+  session_id: string;
+  mandate: string;
+  days: number;
+  orchestrator_engine: string;
+  created_at: string;
+  briefing_snippet: string;
+  volatility?: number | null;
+  max_drawdown?: number | null;
+  total_return?: number | null;
+  alerts_count: number;
+}
+
+export interface HistoryDetail {
+  id: number;
+  user_id: number;
+  session_id: string;
+  mandate: string;
+  days: number;
+  drawdown_tolerance: number;
+  portfolio_snapshot: HoldingItem[];
+  risk_metrics: Record<string, any>;
+  alerts: AlertItem[];
+  news_analyses: any[];
+  drift_analysis: Record<string, any>;
+  forecast: Record<string, any>;
+  briefing: string;
+  trace: string;
+  orchestrator_engine: string;
+  created_at: string;
+}
 
 export interface HoldingItem {
   symbol: string;
@@ -20,9 +66,6 @@ export interface HoldingItem {
   weight: number;
   target_weight?: number | null;
   sector?: string;
-  daily_change_pct?: number | null;
-  unrealized_pnl?: number | null;
-  unrealized_pnl_pct?: number | null;
 }
 
 export interface PortfolioUploadResponse {
@@ -30,7 +73,6 @@ export interface PortfolioUploadResponse {
   holdings: HoldingItem[];
   total_holdings: number;
   total_value?: number | null;
-  upload_timestamp: string;
 }
 
 export interface PortfolioHealthScore {
@@ -64,27 +106,20 @@ export interface AlertItem {
   id: string;
   ticker: string;
   severity: "CRITICAL" | "WARNING" | "INFO";
-  category: string;
+  category: "DRAWDOWN" | "VOLATILITY" | "RETURN_SPIKE" | "CONCENTRATION";
   title: string;
   description: string;
-  trigger_reason: string;
-  return_value?: number | null;
-  z_score?: number | null;
-  timestamp: string;
-  citations?: Array<{ title?: string; url?: string; source?: string }>;
+  trigger_reason?: string;
+  return_value?: number;
+  z_score?: number;
+  citations?: string[];
 }
 
 export interface WatchlistItem {
   symbol: string;
-  name?: string;
-  current_price: number;
-  change_value: number;
-  change_pct: number;
-  day_high?: number;
-  day_low?: number;
-  volume?: number;
-  pe_ratio?: number;
-  market_cap?: number;
+  name?: string | null;
+  sector?: string;
+  added_at: string;
 }
 
 export interface MarketStatus {
@@ -93,62 +128,109 @@ export interface MarketStatus {
   local_time: string;
   timezone: string;
   next_event: string;
-  gainers_today: Array<{ symbol: string; name: string; price: number; change_pct: number; volume: string }>;
-  losers_today: Array<{ symbol: string; name: string; price: number; change_pct: number; volume: string }>;
-}
-
-export interface MonitorRequest {
-  mandate?: "conservative" | "balanced" | "aggressive";
-  days?: number;
-  drawdown_tolerance?: number;
+  gainers_today: Array<{
+    symbol: string;
+    name: string;
+    price: number;
+    change_pct: number;
+    volume: string;
+  }>;
+  losers_today: Array<{
+    symbol: string;
+    name: string;
+    price: number;
+    change_pct: number;
+    volume: string;
+  }>;
 }
 
 export interface MonitorResponse {
   status: string;
-  message?: string;
-  portfolio_value?: number | null;
+  message: string;
+  portfolio_value?: number;
   health_score?: PortfolioHealthScore;
   risk_meter?: RiskMeter;
   diversification?: DiversificationAnalysis;
   risk_metrics?: Record<string, any>;
-  alerts: AlertItem[];
+  alerts?: AlertItem[];
   briefing?: string;
   forecast?: Record<string, any>;
   trace?: string;
   execution_time_ms?: number;
-  error?: string;
 }
 
 export interface SystemStatus {
-  portfolio_loaded: boolean;
-  portfolio_holdings: number;
-  analysis_complete: boolean;
+  status: string;
+  database: string;
+  orchestrator: string;
   model: string;
   timestamp: string;
 }
 
 // ============================================================================
-// AXIOS INSTANCE WITH RESILIENT INTERCEPTORS
+// TOKEN & AUTH STATE HELPERS
+// ============================================================================
+
+const TOKEN_KEY = "portfolio_agent_jwt";
+const USER_KEY = "portfolio_agent_user";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+}
+
+export function clearToken(): void {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+}
+
+export function getStoredUser(): User | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user: User): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+}
+
+// ============================================================================
+// AXIOS INSTANCE & INTERCEPTORS
 // ============================================================================
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 180000, // 3 minutes for deep multi-agent cycles
+  timeout: 45000,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Request Interceptor
+// Request Interceptor: Attach JWT Bearer Token
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Attach timestamp for cache prevention on GET
-  if (config.method === "get") {
-    config.params = { ...config.params, _t: Date.now() };
+  const token = getToken();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Response Error Formatter
+// Response Error Interceptor: Handle 401 & normalize errors
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<any>) => {
@@ -156,6 +238,14 @@ api.interceptors.response.use(
 
     if (error.response) {
       const data = error.response.data;
+      if (error.response.status === 401) {
+        clearToken();
+        // Redirect to login if running in browser and not already on /login
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+          window.location.assign("/login");
+        }
+      }
+
       if (data?.error?.message) {
         message = data.error.message;
       } else if (data?.detail) {
@@ -166,7 +256,7 @@ api.interceptors.response.use(
         message = `Server responded with status ${error.response.status}`;
       }
     } else if (error.request) {
-      message = "Unable to reach server. Please ensure the backend is running.";
+      message = "Unable to reach server. Please ensure the FastAPI backend is running.";
     }
 
     return Promise.reject(new Error(message));
@@ -174,7 +264,52 @@ api.interceptors.response.use(
 );
 
 // ============================================================================
-// API FUNCTIONS
+// AUTHENTICATION FUNCTIONS
+// ============================================================================
+
+export async function signup(email: string, password: string): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>("/api/auth/signup", { email, password });
+  setToken(response.data.token);
+  setStoredUser(response.data.user);
+  return response.data;
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>("/api/auth/login", { email, password });
+  setToken(response.data.token);
+  setStoredUser(response.data.user);
+  return response.data;
+}
+
+export async function getMe(): Promise<User> {
+  const response = await api.get<{ status: string; user: User }>("/api/auth/me");
+  setStoredUser(response.data.user);
+  return response.data.user;
+}
+
+export function logout(): void {
+  clearToken();
+  if (typeof window !== "undefined") {
+    window.location.assign("/login");
+  }
+}
+
+// ============================================================================
+// AGENT HISTORY / MEMORY FUNCTIONS (SQLite)
+// ============================================================================
+
+export async function getHistory(limit: number = 20): Promise<HistorySummary[]> {
+  const response = await api.get<HistorySummary[]>(`/api/history?limit=${limit}`);
+  return response.data;
+}
+
+export async function getHistoryDetail(runId: number): Promise<HistoryDetail> {
+  const response = await api.get<HistoryDetail>(`/api/history/${runId}`);
+  return response.data;
+}
+
+// ============================================================================
+// PORTFOLIO & AGENT EXECUTION FUNCTIONS
 // ============================================================================
 
 export async function uploadPortfolio(file: File): Promise<PortfolioUploadResponse> {
@@ -245,16 +380,6 @@ export async function removeFromWatchlist(symbol: string): Promise<void> {
 
 export async function getMarketStatus(): Promise<MarketStatus> {
   const response = await api.get<MarketStatus>("/api/market/status");
-  return response.data;
-}
-
-export async function getForecast(): Promise<any> {
-  const response = await api.get("/api/forecast");
-  return response.data;
-}
-
-export async function getTrace(): Promise<any> {
-  const response = await api.get("/api/trace");
   return response.data;
 }
 

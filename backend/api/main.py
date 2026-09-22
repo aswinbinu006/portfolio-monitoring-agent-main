@@ -18,6 +18,8 @@ except ImportError:
 from backend.utils.logger import logger
 from backend.api.routers import (
     system_router,
+    auth_router,
+    history_router,
     portfolio_router,
     analysis_router,
     forecast_router,
@@ -76,6 +78,8 @@ def create_app() -> FastAPI:
 
     # Mount API feature routers
     app.include_router(system_router)
+    app.include_router(auth_router)
+    app.include_router(history_router)
     app.include_router(portfolio_router)
     app.include_router(analysis_router)
     app.include_router(forecast_router)

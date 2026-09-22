@@ -59,6 +59,42 @@ The LLM is prompted to:
 
 ---
 
+---
+
+## 🔐 Authentication & Session Security
+
+To ensure portfolio holdings and agent surveillance runs remain isolated per user, the system features a lightweight JWT authentication system:
+
+* **Password Security**: Passwords securely hashed with `bcrypt` (work factor 12).
+* **Token Issuance**: `POST /api/auth/signup` and `POST /api/auth/login` issue signed JWT Bearer tokens (`HS256`, 24-hour expiry).
+* **Protected Endpoints**: All portfolio ingestion (`/api/portfolio/upload`, `/api/portfolio/holdings`), agent orchestration (`/api/monitor/run`), and historical retrieval (`/api/history`) require a valid Bearer token.
+* **Public Endpoints**: `/health`, `/`, and `/api/market/status` remain publicly accessible for status probes.
+
+---
+
+## 💾 Persistent Agent Memory (Episodic Memory)
+
+In Agentic AI systems, **episodic memory** allows autonomous agents to retain chronological execution history, track vulnerability drift across monitoring cycles, and maintain an audit log of past reasoning.
+
+* **Single Source of Truth**: All runtime state is persisted in an ACID SQLite database (`backend/data/app.db`), completely replacing volatile in-memory application state.
+* **User Scoping**: Every portfolio holding and agent run is scoped to the authenticated `user_id`.
+* **Archived Snapshots**: Each execution persists the exact portfolio holdings snapshot, deterministic risk metrics, flagged anomaly alerts, news sentiment, allocation drift, and the LLM executive briefing memo.
+* **Retrospective Audit**: Users and evaluators can inspect past agent runs via the `/history` screen and `GET /api/history/{run_id}`.
+
+---
+
+## 🎨 Visual Polish & 7-Node Stepper Animation
+
+The Next.js 14 frontend provides a linear, fintech-grade monitoring workflow:
+1. **Sign In / Registration** (`/login`): Clean authentication card with persistent JWT storage.
+2. **Portfolio Import & Mandate** (`/portfolio`): CSV file upload or 1-click sample dataset, lookback slider, and max drawdown tolerance.
+3. **Live 7-Node LangGraph Stepper**: When analysis is triggered, an animated modal tracks real-time progression across all 7 graph nodes (`market_data` $\to$ `risk_analysis` $\to$ `anomaly_detection` $\to$ `news_sentiment` $\to$ `drift_analysis` $\to$ `ml_forecast` $\to$ `writer_memo`) with live execution logs.
+4. **Monitoring Center & AI Briefing** (`/dashboard`): Visualizes the centerpiece LLM executive memo alongside quantitative risk evidence, flagged anomalies, and allocation drift.
+5. **Episodic History Explorer** (`/history`): Split-view archive enabling side-by-side inspection of past AI briefings and market snapshots.
+6. **Dark / Light Theme Toggle**: Persistent theme switcher tailored with Slate and Royal Blue (`#2563EB`) fintech aesthetics.
+
+---
+
 ## 🚀 Quickstart & Setup
 
 ### 1. Backend Setup (FastAPI & LangGraph)
@@ -95,10 +131,14 @@ npm run dev
 
 ## 🧪 Testing the Agent Pipeline
 
-To verify the complete 7-agent LangGraph workflow programmatically:
+To verify the complete 7-agent LangGraph workflow, authentication flows, and SQLite persistence programmatically:
 
 ```bash
 # From project root
 python backend/tests/test_pipeline.py
 ```
-This runs the full state machine end-to-end against `backend/sample_portfolio.csv`.
+This executes the automated test suite verifying:
+- Public route availability without JWT
+- Protected route 401 unauthorized rejection
+- User registration, password hashing, and token issuance
+- Portfolio upload, 7-agent StateGraph execution, and SQLite history recording.

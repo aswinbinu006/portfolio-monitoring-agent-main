@@ -15,6 +15,7 @@ class Holding:
     ticker: str
     quantity: float
     target_weight: Optional[float] = None  # For mandate-based rebalancing
+    sector: Optional[str] = None
 
 
 @dataclass

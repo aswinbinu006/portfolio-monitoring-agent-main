@@ -1,17 +1,20 @@
 """
 ML Volatility Forecast and Execution Trace Router.
+Retrieves forecast projections and LangGraph execution traces from SQLite agent memory.
 """
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, status
-from backend.api.dependencies import app_state
+from fastapi import APIRouter, HTTPException, status, Depends
+from backend.api.dependencies import get_current_user
+from backend.data.db import get_latest_agent_run
 
 router = APIRouter(prefix="/api", tags=["Forecast & Telemetry"])
 
 
 @router.get("/forecast")
-async def get_forecast():
-    """Retrieve forward volatility forecast and model performance comparison."""
-    if app_state.latest_results is None or app_state.latest_results.get("forecast") is None:
+async def get_forecast(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Retrieve forward volatility forecast from authenticated user's latest agent run."""
+    latest_run = get_latest_agent_run(current_user["id"])
+    if not latest_run or not latest_run.get("forecast"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No forecast available. Please run monitoring analysis first."
@@ -19,14 +22,15 @@ async def get_forecast():
 
     return {
         "status": "success",
-        "forecast": app_state.latest_results["forecast"]
+        "forecast": latest_run["forecast"]
     }
 
 
 @router.get("/trace")
-async def get_trace():
-    """Retrieve the multi-agent execution telemetry trace."""
-    if app_state.latest_results is None or app_state.latest_results.get("trace") is None:
+async def get_trace(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Retrieve the multi-agent execution telemetry trace from user's latest run."""
+    latest_run = get_latest_agent_run(current_user["id"])
+    if not latest_run or not latest_run.get("trace"):
         return {
             "status": "no_trace",
             "message": "No execution trace available. Please run monitoring analysis first.",
@@ -35,5 +39,5 @@ async def get_trace():
 
     return {
         "status": "success",
-        "trace": app_state.latest_results["trace"]
+        "trace": latest_run["trace"]
     }
