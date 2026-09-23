@@ -9,10 +9,7 @@ for directory in (str(repo_root), str(backend_dir)):
     if directory not in sys.path:
         sys.path.insert(0, directory)
 
-try:
-    from backend.api.main import app, create_app
-except ImportError:
-    from api.main import app, create_app
+from backend.api.main import app, create_app
 
 __all__ = ["app", "create_app"]
 

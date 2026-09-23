@@ -2,6 +2,7 @@
 litellm>=1.0.0
 openai>=1.0.0
 python-dotenv>=1.0.0
+langgraph>=0.0.10
 
 # Data Providers
 yfinance>=0.2.40
@@ -20,8 +21,14 @@ uvicorn[standard]>=0.27.0
 python-multipart>=0.0.9
 pydantic>=2.0.0
 
+# Authentication & Security
+passlib[bcrypt]>=1.7.4
+bcrypt>=3.2.0,<=4.0.1
+pyjwt>=2.8.0
+
 # UI & Utilities
 gradio>=4.0.0
 plotly>=5.18.0
 requests>=2.31.0
 pytest>=7.4.0
+
