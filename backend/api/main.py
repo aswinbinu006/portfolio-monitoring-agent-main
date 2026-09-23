@@ -39,10 +39,23 @@ def create_app() -> FastAPI:
         redoc_url="/redoc",
     )
 
-    # Standard CORS for local development and academic demonstration
+    # CORS configuration for Vercel production frontend and local development
+    cors_origins_env = os.getenv("CORS_ORIGINS", "")
+    allowed_origins = [
+        "https://portfolio-monitoring-agent-six.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    if cors_origins_env:
+        for origin in cors_origins_env.split(","):
+            clean_origin = origin.strip()
+            if clean_origin and clean_origin not in allowed_origins:
+                allowed_origins.append(clean_origin)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
+        allow_origin_regex=r"^https://portfolio-monitoring-agent.*\.vercel\.app$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

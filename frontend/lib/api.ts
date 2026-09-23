@@ -6,7 +6,7 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from "axios";
 
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:7860";
+  process.env.NEXT_PUBLIC_API_URL || "https://portfolio-monitoring-agent-main.onrender.com";
 
 // ============================================================================
 // DATA MODELS

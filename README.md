@@ -6,6 +6,17 @@ The investment portfolio domain serves as a high-stakes testbed requiring multi-
 
 ---
 
+## 🌐 Live Hosted Deployments
+
+| Component | Platform | Live URL | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | **Vercel** | [https://portfolio-monitoring-agent-six.vercel.app/](https://portfolio-monitoring-agent-six.vercel.app/) | Next.js 14 App Router, Tailwind CSS, real-time dashboard |
+| **Backend** | **Render** | [https://portfolio-monitoring-agent-main.onrender.com](https://portfolio-monitoring-agent-main.onrender.com) | FastAPI, LangGraph StateGraph, SQLite episodic memory |
+
+---
+
+---
+
 ## 🤖 Multi-Agent Architecture
 
 The system operates as a **StateGraph** where typed state (`PortfolioMonitoringState`) is passed sequentially across 7 agent nodes. Upstream agents perform statistical screening and information retrieval so that the LLM (Writer Agent) only processes high-signal evidence.
@@ -92,6 +103,30 @@ The Next.js 14 frontend provides a linear, fintech-grade monitoring workflow:
 4. **Monitoring Center & AI Briefing** (`/dashboard`): Visualizes the centerpiece LLM executive memo alongside quantitative risk evidence, flagged anomalies, and allocation drift.
 5. **Episodic History Explorer** (`/history`): Split-view archive enabling side-by-side inspection of past AI briefings and market snapshots.
 6. **Dark / Light Theme Toggle**: Persistent theme switcher tailored with Slate and Royal Blue (`#2563EB`) fintech aesthetics.
+
+---
+
+## ⚙️ Environment Variables Setup
+
+### Frontend Environment (`frontend/.env.local` / Vercel Settings)
+| Variable | Description | Default / Production Value |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | Fast API backend endpoint | `https://portfolio-monitoring-agent-main.onrender.com` *(Local: `http://localhost:7860`)* |
+
+### Backend Environment (`backend/.env` / Render Settings)
+| Variable | Description | Required / Recommended? |
+| :--- | :--- | :--- |
+| `GOOGLE_API_KEY` | Google Gemini API key for AI synthesis | Recommended |
+| `GROQ_API_KEY` | Groq API key for Llama 3.1 fallback | Optional |
+| `JWT_SECRET` | Secret key for signing authentication JWT tokens | Recommended (has secure local fallback) |
+| `CORS_ORIGINS` | Permitted frontend origins (comma-separated) | Defaults include Vercel and localhost:3000 |
+| `PORT` | Web server listening port | `7860` (Render overrides automatically) |
+| `TAVILY_API_KEY` | Real-time web and financial news retrieval | Optional (Graceful fallback) |
+| `MARKETAUX_API_KEY` | Financial news & sentiment provider | Optional (Graceful fallback) |
+| `Z_THRESHOLD` | Statistical anomaly threshold ($Z$-score) | `2.0` |
+| `DRIFT_TOLERANCE` | Portfolio rebalance drift trigger | `0.05` (5%) |
+| `EWMA_LAMBDA` | Volatility decay factor (RiskMetrics) | `0.94` |
+| `CACHE_TTL_SECONDS` | In-memory cache TTL | `900` (15 minutes) |
 
 ---
 
