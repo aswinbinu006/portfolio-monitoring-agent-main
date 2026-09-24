@@ -68,10 +68,7 @@ develop-eggs/
 dist/
 downloads/
 eggs/
-.eggs/
-lib/
-lib64/
-parts/
+# (do not ignore lib/ as it matches frontend/src/lib)
 sdist/
 var/
 wheels/
