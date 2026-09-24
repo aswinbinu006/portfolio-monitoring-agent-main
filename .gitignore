@@ -1,33 +1,76 @@
-# Environment variables - NEVER commit these!
-.env
-.env.*
-*.env
-!.env.example
-backend/.env
-backend/.env.*
-backend/*.env
-!backend/.env.example
-frontend/.env
-frontend/.env.*
-frontend/*.env
-!frontend/.env.example
-*.local
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Python
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js build outputs and caches
+/.next/
+/out/
+/build
+/dist
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# environment files
+.env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Explicitly keep the example file for GitHub users
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Python virtualenv & cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
+venv/
+.venv/
+ENV/
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-/lib/
-/lib64/
-!frontend/lib/
+lib/
+lib64/
 parts/
 sdist/
 var/
@@ -35,43 +78,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Virtual Environment
-.venv/
-venv/
-ENV/
-env/
-
-# Cache
-.cache/
-*.cache
-.pytest_cache/
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-temp_portfolio.csv
-*.log
+*.sqlite
+*.sqlite3
 *.db
-backend/data/*.db
-
-# Offline data
-offline_portfolio.parquet
-
-# Frontend
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/.vercel/
-frontend/.env*.local
-
-# Build outputs
-*.pyc
